@@ -1,0 +1,30 @@
+{{define "home"}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; font-src 'self'"
+    />
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main>
+      <ul class="type-list">
+        {{range .Types}}
+        <li>
+          <div class="type-row">
+            <a href="{{.URL}}">{{.Name}}</a>
+            <span class="type-count">({{.Count}} records)</span>
+          </div>
+          {{if .Doc}}<div class="type-doc">{{.Doc}}</div>{{end}}
+        </li>
+        {{end}}
+      </ul>
+    </main>
+  </body>
+</html>
+{{end}}

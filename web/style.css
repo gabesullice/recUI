@@ -1,0 +1,206 @@
+@layer reset, base, layout, components;
+
+@property --color-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0a0a0a;
+}
+
+@property --measure {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 72ch;
+}
+
+@font-face {
+  font-family: "DM Mono";
+  src: url("/vendor/dm-mono.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  ul,
+  ol {
+    list-style: none;
+  }
+}
+
+@layer base {
+  :root {
+    --color-text: #0a0a0a;
+    --color-bg: #ffffff;
+    --color-rule: #e0e0e0;
+    --measure: 72ch;
+  }
+
+  html {
+    font-family: "DM Mono", monospace;
+    font-size: clamp(15px, 1.5vw, 18px);
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  a {
+    color: var(--color-text);
+  }
+
+  a:hover {
+    text-decoration: none;
+  }
+}
+
+@layer layout {
+  main {
+    max-width: var(--measure);
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+    padding-block: 2rem;
+  }
+
+  h2 {
+    font-size: 1.25em;
+    font-weight: 400;
+    margin-block-end: 1rem;
+  }
+
+  h3 {
+    font-size: 1em;
+    font-weight: 700;
+    color: #000;
+    margin-block-start: 1.5rem;
+    margin-block-end: 0.25rem;
+  }
+
+  p {
+    margin-block: 0.5rem;
+  }
+
+  ol {
+    padding-inline-start: 1.5rem;
+    list-style: decimal;
+  }
+
+  ol li {
+    margin-block: 0.25rem;
+  }
+}
+
+@layer components {
+  /* Home page: type index rows */
+  .type-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .type-list li {
+    margin-block: 0.75rem;
+  }
+
+  .type-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .type-count {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .type-doc {
+    opacity: 0.6;
+    font-size: 0.9em;
+    margin-block-start: 0.15rem;
+  }
+
+  /* Type page: record index */
+  .record-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .record-list li {
+    margin-block: 0.4rem;
+  }
+
+  /* Record page: inline field rendering (email, url, uuid, date, enum single) */
+  .field-inline {
+    margin-block: 0.5rem;
+    margin-block-start: 1.25rem;
+  }
+
+  /* Consecutive inline fields collapse back to normal spacing */
+  .field-inline + .field-inline {
+    margin-block-start: 0.5rem;
+  }
+
+  /* Record page: enum multivalued — inline comma-separated */
+  ol.enum-values {
+    display: inline;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  ol.enum-values li {
+    display: inline;
+  }
+
+  ol.enum-values li + li::before {
+    content: ", ";
+  }
+
+  /* Record page: field values */
+  .record-fields {
+    font-size: 16px;
+  }
+
+  /* Record page: spacing for fields whose label is omitted (replaces h3 margin) */
+  .field-omit {
+    margin-block-start: 1.25rem;
+  }
+
+  /* Record page nav (header and footer) */
+  .record-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.85em;
+  }
+
+  main > nav:first-of-type {
+    margin-block-end: 1.5rem;
+    padding-block-end: 0.75rem;
+    border-bottom: 1px solid var(--color-rule);
+  }
+
+  main > nav:last-of-type {
+    margin-block-start: 2.5rem;
+    padding-block-start: 0.75rem;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  .record-nav span {
+    flex: 1;
+  }
+
+  .record-nav span:nth-child(2) {
+    text-align: center;
+  }
+
+  .record-nav span:nth-child(3) {
+    text-align: right;
+  }
+}

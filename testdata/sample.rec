@@ -1,0 +1,82 @@
+# Library catalogue sample recfile
+# Exercises: multiple types, %key:, %doc:, %type: rec/email/url/enum/uuid/date,
+# multivalued fields, multi-line continuation, and a keyless type (Tag).
+
+%rec: Author
+%key: AuthorId
+%doc: People who have written books in the catalogue.
+%type: AuthorId uuid
+%type: Email email
+%type: Website url
+%type: Born date
+
+AuthorId: a1b2c3d4-0001-0000-0000-000000000000
+Name: Douglas R. Hofstadter
+Email: drh@example.edu
+Website: https://www.example.edu/drh
+Born: 1945-02-15
+
+AuthorId: a1b2c3d4-0002-0000-0000-000000000000
+Name: Ursula K. Le Guin
+Email: ukl@example.com
+Website: https://www.ursulakleguin.com
+Born: 1929-10-21
+
+AuthorId: a1b2c3d4-0003-0000-0000-000000000000
+Name: Jorge Luis Borges
+Email: jlb@example.ar
+Born: 1899-08-24
+
+%rec: Book
+%key: ISBN
+%doc: Books held in the catalogue. Each book has at least one Author foreign
++ key and zero or more Tag labels.
+%type: ISBN uuid
+%type: Author rec Author
+%type: Genre enum fiction non-fiction essay philosophy mathematics science
+%type: Added date
+
+ISBN: b0000001-0000-0000-0000-000000000001
+Title: Gödel, Escher, Bach
+Author: a1b2c3d4-0001-0000-0000-000000000000
+Genre: non-fiction
+Genre: mathematics
+Genre: philosophy
+Added: 1979-02-05
+Notes: An eternal golden braid exploring the nature of consciousness,
++ formal systems, and recursive structures in music, art, and mathematics.
+
+ISBN: b0000001-0000-0000-0000-000000000002
+Title: The Left Hand of Darkness
+Author: a1b2c3d4-0002-0000-0000-000000000000
+Genre: fiction
+Genre: science
+Added: 1969-03-01
+
+ISBN: b0000001-0000-0000-0000-000000000003
+Title: Ficciones
+Author: a1b2c3d4-0003-0000-0000-000000000000
+Genre: fiction
+Genre: essay
+Added: 1944-01-01
+
+ISBN: b0000001-0000-0000-0000-000000000004
+Title: The Dispossessed
+Author: a1b2c3d4-0002-0000-0000-000000000000
+Genre: fiction
+Genre: science
+Genre: philosophy
+Added: 1974-05-01
+
+%rec: Tag
+%doc: Freeform labels that can be applied across records. No %key: declared.
+%type: Color enum red green blue yellow grey
+
+Label: mathematics
+Color: grey
+
+Label: philosophy
+Color: grey
+
+Label: fiction
+Color: blue

@@ -1,0 +1,19 @@
+[type.Book]
+title = "Title"
+field_order = ["Title", "Author", "Published", "Genre", "Notes"]
+
+[type.Book.fields.Author]
+label = "inline"
+
+[type.Book.fields.Genre]
+list_format = "inline"
+sep = ", "
+
+[type.Book.fields.Notes]
+label = "h3"
+
+[type.Book.fields.InternalID]
+exclude = true
+
+[type.Junction]
+browse = false

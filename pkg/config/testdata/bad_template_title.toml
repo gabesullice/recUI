@@ -1,0 +1,2 @@
+[type.Book]
+title = "{{.Id}."

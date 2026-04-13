@@ -1,0 +1,92 @@
+{{define "record"}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; font-src 'self'"
+    />
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="up" href="{{.UpURL}}" title="{{.TypeName}}" />
+    {{if .PrevURL}}<link rel="prev" href="{{.PrevURL}}" title="{{.PrevTitle}}" />{{end}}
+    {{if .NextURL}}<link rel="next" href="{{.NextURL}}" title="{{.NextTitle}}" />{{end}}
+  </head>
+  <body>
+    <main>
+      <nav class="record-nav">
+        <span>{{if .PrevURL}}<a href="{{.PrevURL}}" title="{{.PrevTitle}}">← Previous</a>{{end}}</span>
+        <span><a href="{{.UpURL}}">↑ {{.TypeName}}</a></span>
+        <span>{{if .NextURL}}<a href="{{.NextURL}}" title="{{.NextTitle}}">Next →</a>{{end}}</span>
+      </nav>
+      <h2>{{.Heading}}</h2>
+      <div class="record-fields">
+        {{range .Fields}}
+          {{if eq .Kind "inline"}}
+            <p class="field-inline"><strong>{{.Name}}:</strong> {{.Single}}</p>
+          {{else if eq .Kind "fk-single"}}
+            {{if eq .Label "inline"}}
+              <p class="field-inline"><strong>{{.Name}}:</strong> <a href="{{.SingleURL}}">→ {{.Single}}</a></p>
+            {{else if eq .Label "omit"}}
+              <p class="field-inline"><a href="{{.SingleURL}}">→ {{.Single}}</a></p>
+            {{else}}
+              <h3>{{.Name}}</h3>
+              <p><a href="{{.SingleURL}}">→ {{.Single}}</a></p>
+            {{end}}
+          {{else if eq .Kind "fk-multi"}}
+            {{if not (eq .Label "omit")}}<h3>{{.Name}}</h3>{{end}}
+            <ol>
+              {{range .Links}}
+              <li><a href="{{.URL}}">→ {{.Title}}</a></li>
+              {{end}}
+            </ol>
+          {{else if eq .Kind "email-single"}}
+            <p class="field-inline"><strong>{{.Name}}:</strong> <a href="mailto:{{.Single}}">{{.Single}}</a></p>
+          {{else if eq .Kind "email-multi"}}
+            <h3>{{.Name}}</h3>
+            <ol>
+              {{range .Multi}}
+              <li><a href="mailto:{{.}}">{{.}}</a></li>
+              {{end}}
+            </ol>
+          {{else if eq .Kind "url-single"}}
+            <p class="field-inline"><strong>{{.Name}}:</strong> <a href="{{.Single}}">{{.Single}}</a></p>
+          {{else if eq .Kind "url-multi"}}
+            <h3>{{.Name}}</h3>
+            <ol>
+              {{range .Multi}}
+              <li><a href="{{.}}">{{.}}</a></li>
+              {{end}}
+            </ol>
+          {{else if eq .Kind "enum-multi"}}
+            <p class="field-inline"><strong>{{.Name}}:</strong> <ol class="enum-values">{{range .Multi}}<li>{{.}}</li>{{end}}</ol></p>
+          {{else if eq .Kind "inline-sep"}}
+            <p><strong>{{.Name}}:</strong> {{.Single}}</p>
+          {{else if eq .Kind "block-single"}}
+            {{if eq .Label "omit"}}
+              <p class="field-omit">{{.Single}}</p>
+            {{else}}
+              <h3>{{.Name}}</h3>
+              <p>{{.Single}}</p>
+            {{end}}
+          {{else if eq .Kind "block-multi"}}
+            {{if eq .Label "omit"}}
+              <ol class="field-omit">{{range .Multi}}<li>{{.}}</li>{{end}}</ol>
+            {{else}}
+              <h3>{{.Name}}</h3>
+              <ol>{{range .Multi}}<li>{{.}}</li>{{end}}</ol>
+            {{end}}
+          {{end}}
+        {{end}}
+      </div>
+      <nav class="record-nav">
+        <span>{{if .PrevURL}}<a href="{{.PrevURL}}" title="{{.PrevTitle}}">← Previous</a>{{end}}</span>
+        <span><a href="{{.UpURL}}">↑ {{.TypeName}}</a></span>
+        <span>{{if .NextURL}}<a href="{{.NextURL}}" title="{{.NextTitle}}">Next →</a>{{end}}</span>
+      </nav>
+    </main>
+  </body>
+</html>
+{{end}}

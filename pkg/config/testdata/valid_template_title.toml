@@ -1,0 +1,3 @@
+[type.Book]
+title = "{{.Id}}. {{.Name}}"
+field_order = ["Id", "Name", "Author"]

@@ -1,0 +1,5 @@
+[type.Book]
+title = "Books"
+
+[type.Book.fields.Author]
+label = "bold"

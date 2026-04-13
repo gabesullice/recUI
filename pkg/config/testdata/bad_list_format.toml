@@ -1,0 +1,5 @@
+[type.Book]
+title = "Books"
+
+[type.Book.fields.Genre]
+list_format = "csv"

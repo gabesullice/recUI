@@ -1,0 +1,39 @@
+{{define "type-list"}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; font-src 'self'"
+    />
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="up" href="{{.HomeURL}}" />
+    {{if .PrevURL}}<link rel="prev" href="{{.PrevURL}}" title="{{.PrevTitle}}" />{{end}}
+    {{if .NextURL}}<link rel="next" href="{{.NextURL}}" title="{{.NextTitle}}" />{{end}}
+  </head>
+  <body>
+    <main>
+      <nav class="record-nav">
+        <span>{{if .PrevURL}}<a href="{{.PrevURL}}" title="{{.PrevTitle}}">← Previous</a>{{end}}</span>
+        <span><a href="{{.HomeURL}}">↑ Home</a></span>
+        <span>{{if .NextURL}}<a href="{{.NextURL}}" title="{{.NextTitle}}">Next →</a>{{end}}</span>
+      </nav>
+      <h2>{{.Title}}</h2>
+      {{if .Doc}}<p>{{.Doc}}</p>{{end}}
+      <ol class="record-list">
+        {{range .Records}}
+        <li><a href="{{.URL}}">{{.Title}}</a></li>
+        {{end}}
+      </ol>
+      <nav class="record-nav">
+        <span>{{if .PrevURL}}<a href="{{.PrevURL}}" title="{{.PrevTitle}}">← Previous</a>{{end}}</span>
+        <span><a href="{{.HomeURL}}">↑ Home</a></span>
+        <span>{{if .NextURL}}<a href="{{.NextURL}}" title="{{.NextTitle}}">Next →</a>{{end}}</span>
+      </nav>
+    </main>
+  </body>
+</html>
+{{end}}
