@@ -7,6 +7,12 @@ page listing record types, type pages listing records, and record pages with
 field values and prev/next navigation. It can run as a local dev server or
 generate a static site for any host.
 
+[Live demo](https://gabesullice.github.io/recUI/)
+
+<p align="center">
+  <img src="screenshot.png" width="500px" alt="recUI screenshot">
+</p>
+
 ## Building
 
 Requires **Go 1.22+**, **make**, and **curl**.
