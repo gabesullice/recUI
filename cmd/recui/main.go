@@ -132,7 +132,53 @@ func main() {
 	serve.Flags().StringVarP(&flagWebDir, "web-dir", "w", "", "serve static assets from this disk path instead of embedded FS")
 	serve.Flags().StringVarP(&flagConfig, "config", "c", "", "path to TOML display config file")
 
+	var flagOutputDir string
+	var flagGenConfig string
+
+	generate := &cobra.Command{
+		Use:   "generate <recfile>",
+		Short: "Generate a static website from a recfile",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Resolve and load config if --config was provided.
+			var uiConfig config.UIConfig
+			if flagGenConfig != "" {
+				cfgPath, err := filepath.EvalSymlinks(flagGenConfig)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "recui: cannot resolve config path %q: %v\n", flagGenConfig, err)
+					os.Exit(1)
+				}
+				var loadErr error
+				uiConfig, loadErr = config.LoadConfig(cfgPath)
+				if loadErr != nil {
+					fmt.Fprintf(os.Stderr, "recui: %v\n", loadErr)
+					os.Exit(1)
+				}
+			}
+			// Canonicalize the recfile path.
+			canonicalPath, err := filepath.EvalSymlinks(args[0])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "recui: cannot resolve path %q: %v\n", args[0], err)
+				os.Exit(1)
+			}
+			cfg := server.GenerateConfig{
+				RecfilePath: canonicalPath,
+				UIConfig:    uiConfig,
+				OutputDir:   flagOutputDir,
+			}
+			if err := server.Generate(cfg); err != nil {
+				fmt.Fprintf(os.Stderr, "recui: %v\n", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
+
+	generate.Flags().StringVarP(&flagOutputDir, "output", "o", "site", "output directory for the generated site")
+	generate.Flags().StringVarP(&flagGenConfig, "config", "c", "", "path to TOML display config file")
+
 	root.AddCommand(serve)
+	root.AddCommand(generate)
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "recui: %v\n", err)

@@ -9,7 +9,7 @@
       content="default-src 'self'; font-src 'self'"
     />
     <title>{{.Title}}</title>
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="{{.StyleURL}}" />
     <link rel="up" href="{{.UpURL}}" title="{{.TypeName}}" />
     {{if .PrevURL}}<link rel="prev" href="{{.PrevURL}}" title="{{.PrevTitle}}" />{{end}}
     {{if .NextURL}}<link rel="next" href="{{.NextURL}}" title="{{.NextTitle}}" />{{end}}

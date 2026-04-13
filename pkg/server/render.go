@@ -71,8 +71,9 @@ func prefersHTML(r *http.Request) bool {
 
 // homeData is the template data for the home page.
 type homeData struct {
-	Title string
-	Types []typeRow
+	Title    string
+	StyleURL string
+	Types    []typeRow
 }
 
 type typeRow struct {
@@ -85,6 +86,7 @@ type typeRow struct {
 // typeData is the template data for a record type listing page.
 type typeData struct {
 	Title     string
+	StyleURL  string
 	TypeURL   string
 	HomeURL   string
 	Doc       string
@@ -103,6 +105,7 @@ type recordLink struct {
 // recordData is the template data for a single record detail page.
 type recordData struct {
 	Title     string
+	StyleURL  string
 	Heading   string
 	Fields    []renderedField
 	HomeURL   string
@@ -257,31 +260,47 @@ func orderedFieldNames(rec recfile.Record, tc config.TypeConfig) []string {
 	return ordered
 }
 
-// renderHome renders the home page listing all record types.
-func (s *srv) renderHome(w http.ResponseWriter, r *http.Request, types []recfile.RecordType) error {
+// rewriteURL applies rw to an absolute URL path if rw is non-nil, otherwise
+// returns the path unchanged. Serve mode passes nil; generate mode passes a
+// function that produces relative URLs for each page's position in the tree.
+func rewriteURL(rw func(string) string, absURL string) string {
+	if rw == nil {
+		return absURL
+	}
+	return rw(absURL)
+}
+
+// buildHomeData constructs the template data for the home page.
+// rw, when non-nil, rewrites absolute URL paths (see rewriteURL).
+func buildHomeData(types []recfile.RecordType, uiCfg config.UIConfig, rw func(string) string) homeData {
 	rows := make([]typeRow, 0, len(types))
 	for _, rt := range types {
-		if !s.cfg.UIConfig[rt.Name].Browseable() {
+		if !uiCfg[rt.Name].Browseable() {
 			continue
 		}
 		rows = append(rows, typeRow{
 			Name:  rt.Name,
-			URL:   typeRoute{TypeName: rt.Name}.URL(),
+			URL:   rewriteURL(rw, typeRoute{TypeName: rt.Name}.URL()),
 			Count: len(rt.Records),
 			Doc:   rt.Doc,
 		})
 	}
-	data := homeData{
-		Title: "recui",
-		Types: rows,
+	return homeData{
+		Title:    "recui",
+		StyleURL: rewriteURL(rw, "/style.css"),
+		Types:    rows,
 	}
-	return executeTemplate(w, "home", data)
 }
 
-// renderType renders the listing page for a single record type.
-func (s *srv) renderType(w http.ResponseWriter, r *http.Request, rt recfile.RecordType) error {
-	allTypes := *s.types.Load()
-	tc := s.cfg.UIConfig[rt.Name]
+// renderHome renders the home page listing all record types.
+func (s *srv) renderHome(w http.ResponseWriter, r *http.Request, types []recfile.RecordType) error {
+	return executeTemplate(w, "home", buildHomeData(types, s.cfg.UIConfig, nil))
+}
+
+// buildTypeData constructs the template data for a record type listing page.
+// rw, when non-nil, rewrites absolute URL paths (see rewriteURL).
+func buildTypeData(rt recfile.RecordType, allTypes []recfile.RecordType, uiCfg config.UIConfig, rw func(string) string) typeData {
+	tc := uiCfg[rt.Name]
 	links := make([]recordLink, 0, len(rt.Records))
 	for i, rec := range rt.Records {
 		key := recordID(rt, i, rec)
@@ -291,20 +310,21 @@ func (s *srv) renderType(w http.ResponseWriter, r *http.Request, rt recfile.Reco
 		}
 		links = append(links, recordLink{
 			Title: title,
-			URL:   recordRoute{TypeName: rt.Name, Key: key}.URL(),
+			URL:   rewriteURL(rw, recordRoute{TypeName: rt.Name, Key: key}.URL()),
 		})
 	}
 	data := typeData{
-		Title:   rt.Name,
-		TypeURL: typeRoute{TypeName: rt.Name}.URL(),
-		HomeURL: homeRoute{}.URL(),
-		Doc:     rt.Doc,
-		Records: links,
+		Title:    rt.Name,
+		StyleURL: rewriteURL(rw, "/style.css"),
+		TypeURL:  rewriteURL(rw, typeRoute{TypeName: rt.Name}.URL()),
+		HomeURL:  rewriteURL(rw, homeRoute{}.URL()),
+		Doc:      rt.Doc,
+		Records:  links,
 	}
 	// Build prev/next using only browseable types.
 	browseableTypes := make([]recfile.RecordType, 0, len(allTypes))
 	for _, t := range allTypes {
-		if s.cfg.UIConfig[t.Name].Browseable() {
+		if uiCfg[t.Name].Browseable() {
 			browseableTypes = append(browseableTypes, t)
 		}
 	}
@@ -314,39 +334,41 @@ func (s *srv) renderType(w http.ResponseWriter, r *http.Request, rt recfile.Reco
 		}
 		if i > 0 {
 			prev := browseableTypes[i-1]
-			data.PrevURL = typeRoute{TypeName: prev.Name}.URL()
+			data.PrevURL = rewriteURL(rw, typeRoute{TypeName: prev.Name}.URL())
 			data.PrevTitle = prev.Name
 		}
 		if i < len(browseableTypes)-1 {
 			next := browseableTypes[i+1]
-			data.NextURL = typeRoute{TypeName: next.Name}.URL()
+			data.NextURL = rewriteURL(rw, typeRoute{TypeName: next.Name}.URL())
 			data.NextTitle = next.Name
 		}
 		break
 	}
-	return executeTemplate(w, "type-list", data)
+	return data
 }
 
-// renderRecord renders the detail page for a single record.
-func (s *srv) renderRecord(w http.ResponseWriter, r *http.Request, rt recfile.RecordType, idx int, rec recfile.Record) error {
-	types := *s.types.Load()
-	tc := s.cfg.UIConfig[rt.Name]
+// renderType renders the listing page for a single record type.
+func (s *srv) renderType(w http.ResponseWriter, r *http.Request, rt recfile.RecordType) error {
+	return executeTemplate(w, "type-list", buildTypeData(rt, *s.types.Load(), s.cfg.UIConfig, nil))
+}
 
+// buildRecordData constructs the template data for a single record detail page.
+// rw, when non-nil, rewrites absolute URL paths (see rewriteURL).
+func buildRecordData(rt recfile.RecordType, idx int, rec recfile.Record, allTypes []recfile.RecordType, uiCfg config.UIConfig, rw func(string) string) recordData {
+	tc := uiCfg[rt.Name]
 	heading, titleFieldName := recordTitle(rec, rt, tc)
-
 	// Build prev/next navigation.
 	var prevURL, prevTitle, nextURL, nextTitle string
 	if idx > 0 {
 		prev := rt.Records[idx-1]
-		prevURL = recordRoute{TypeName: rt.Name, Key: recordID(rt, idx-1, prev)}.URL()
+		prevURL = rewriteURL(rw, recordRoute{TypeName: rt.Name, Key: recordID(rt, idx-1, prev)}.URL())
 		prevTitle, _ = recordTitle(prev, rt, tc)
 	}
 	if idx < len(rt.Records)-1 {
 		next := rt.Records[idx+1]
-		nextURL = recordRoute{TypeName: rt.Name, Key: recordID(rt, idx+1, next)}.URL()
+		nextURL = rewriteURL(rw, recordRoute{TypeName: rt.Name, Key: recordID(rt, idx+1, next)}.URL())
 		nextTitle, _ = recordTitle(next, rt, tc)
 	}
-
 	// Build rendered fields using config-ordered field names.
 	names := orderedFieldNames(rec, tc)
 	fields := make([]renderedField, 0, len(names))
@@ -360,30 +382,40 @@ func (s *srv) renderRecord(w http.ResponseWriter, r *http.Request, rt recfile.Re
 			continue
 		}
 		vals := rec.FieldValues(name)
-		rf := buildRenderedField(name, vals, rt, types, fc, s.cfg.UIConfig)
+		rf := buildRenderedField(name, vals, rt, allTypes, fc, uiCfg, rw)
 		fields = append(fields, rf)
 	}
-
-	data := recordData{
+	// Determine "up" URL: type collection if browseable, home otherwise.
+	upURL := rewriteURL(rw, typeRoute{TypeName: rt.Name}.URL())
+	if !uiCfg[rt.Name].Browseable() {
+		upURL = rewriteURL(rw, homeRoute{}.URL())
+	}
+	return recordData{
 		Title:     heading + " — " + rt.Name,
+		StyleURL:  rewriteURL(rw, "/style.css"),
 		Heading:   heading,
 		Fields:    fields,
-		HomeURL:   homeRoute{}.URL(),
-		TypeURL:   typeRoute{TypeName: rt.Name}.URL(),
+		HomeURL:   rewriteURL(rw, homeRoute{}.URL()),
+		TypeURL:   rewriteURL(rw, typeRoute{TypeName: rt.Name}.URL()),
 		TypeName:  rt.Name,
 		PrevURL:   prevURL,
 		PrevTitle: prevTitle,
 		NextURL:   nextURL,
 		NextTitle: nextTitle,
-		UpURL:     s.upURL(rt.Name),
+		UpURL:     upURL,
 	}
-	return executeTemplate(w, "record", data)
+}
+
+// renderRecord renders the detail page for a single record.
+func (s *srv) renderRecord(w http.ResponseWriter, r *http.Request, rt recfile.RecordType, idx int, rec recfile.Record) error {
+	return executeTemplate(w, "record", buildRecordData(rt, idx, rec, *s.types.Load(), s.cfg.UIConfig, nil))
 }
 
 // buildRenderedField constructs a renderedField for the given field name and
 // values, looking up type metadata and foreign key targets as needed.
 // fc carries any field-level display overrides from the UI config.
-func buildRenderedField(name string, vals []string, rt recfile.RecordType, allTypes []recfile.RecordType, fc config.FieldConfig, uiCfg config.UIConfig) renderedField {
+// rw, when non-nil, rewrites absolute URL paths (see rewriteURL).
+func buildRenderedField(name string, vals []string, rt recfile.RecordType, allTypes []recfile.RecordType, fc config.FieldConfig, uiCfg config.UIConfig, rw func(string) string) renderedField {
 	ft, hasType := rt.FieldTypes[name]
 	targetTypeName := rt.ForeignKeys[name]
 	multi := len(vals) > 1
@@ -391,14 +423,14 @@ func buildRenderedField(name string, vals []string, rt recfile.RecordType, allTy
 	switch {
 	case hasType && ft.Kind == "rec" && !multi:
 		// Single foreign key: → Title link
-		url, title := resolveForeignKey(targetTypeName, vals[0], allTypes, uiCfg)
+		url, title := resolveForeignKey(targetTypeName, vals[0], allTypes, uiCfg, rw)
 		return renderedField{Name: name, Kind: "fk-single", SingleURL: url, Single: title, Label: fc.Label}
 
 	case hasType && ft.Kind == "rec" && multi:
 		// Multi foreign key: list of → Title links
 		items := make([]linkItem, 0, len(vals))
 		for _, v := range vals {
-			u, title := resolveForeignKey(targetTypeName, v, allTypes, uiCfg)
+			u, title := resolveForeignKey(targetTypeName, v, allTypes, uiCfg, rw)
 			items = append(items, linkItem{Title: title, URL: u})
 		}
 		return renderedField{Name: name, Kind: "fk-multi", Links: items, Label: fc.Label}
@@ -464,16 +496,17 @@ func buildRenderedField(name string, vals []string, rt recfile.RecordType, allTy
 
 // resolveForeignKey looks up a referenced record and returns its URL and display
 // title. Falls back to the raw value string if the record is not found.
-func resolveForeignKey(targetTypeName, keyVal string, allTypes []recfile.RecordType, uiCfg config.UIConfig) (url, title string) {
+// rw, when non-nil, rewrites absolute URL paths (see rewriteURL).
+func resolveForeignKey(targetTypeName, keyVal string, allTypes []recfile.RecordType, uiCfg config.UIConfig, rw func(string) string) (url, title string) {
 	targetRT, found := findType(allTypes, targetTypeName)
 	if !found {
 		return "", keyVal
 	}
 	idx, rec, found := findRecord(targetRT, keyVal)
 	if !found {
-		return typeRoute{TypeName: targetTypeName}.URL(), keyVal
+		return rewriteURL(rw, typeRoute{TypeName: targetTypeName}.URL()), keyVal
 	}
-	url = recordRoute{TypeName: targetTypeName, Key: recordID(targetRT, idx, rec)}.URL()
+	url = rewriteURL(rw, recordRoute{TypeName: targetTypeName, Key: recordID(targetRT, idx, rec)}.URL())
 	tc := uiCfg[targetTypeName]
 	title, _ = recordTitle(rec, targetRT, tc)
 	if title == "" {
